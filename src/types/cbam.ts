@@ -239,3 +239,27 @@ export interface ExportOptions {
     end: string
   }
 }
+
+// Interface pour une importation avec produit populé
+export interface ImportWithProduct extends CbamImport {
+  product: {
+    id: string
+    name: string
+    cnCode: string
+    sector: CbamSector
+    carbonIntensity: number
+    isActive: boolean
+    createdAt: string
+    updatedAt: string
+  }
+}
+
+// Interface pour un fournisseur avec données carbone optionnelles
+export interface SupplierWithCarbonData extends Supplier {
+  carbonIntensityData?: {
+    sector: CbamSector
+    value: number
+    verifiedAt: string
+    certificate?: string
+  }[]
+}

@@ -12,9 +12,13 @@ export default withAuth(
     // Pages d'administration qui nécessitent un rôle admin
     const adminPaths = ['/admin']
     
+    // Pages d'authentification (accessibles seulement si non connecté)
+    const authPaths = ['/auth/signin', '/auth/signup', '/auth/forgot-password']
+    
     // Vérifier si la route nécessite une authentification
     const isProtectedPath = protectedPaths.some(path => pathname.startsWith(path))
     const isAdminPath = adminPaths.some(path => pathname.startsWith(path))
+    const isAuthPath = authPaths.some(path => pathname.startsWith(path))
     
     // Rediriger vers la page de connexion si non authentifié
     if (isProtectedPath && !token) {
@@ -28,8 +32,8 @@ export default withAuth(
       return NextResponse.redirect(new URL('/dashboard', req.url))
     }
     
-    // Rediriger les utilisateurs authentifiés depuis les pages d'auth
-    if (token && pathname.startsWith('/auth/')) {
+    // Rediriger les utilisateurs authentifiés depuis les pages d'auth vers le dashboard
+    if (token && isAuthPath) {
       return NextResponse.redirect(new URL('/dashboard', req.url))
     }
     
@@ -41,7 +45,7 @@ export default withAuth(
         const { pathname } = req.nextUrl
         
         // Autoriser l'accès aux pages publiques
-        if (pathname === '/' || pathname.startsWith('/auth/')) {
+        if (pathname === '/' || pathname.startsWith('/auth/') || pathname.startsWith('/legal/')) {
           return true
         }
         
