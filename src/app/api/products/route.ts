@@ -33,6 +33,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const params = searchSchema.parse(Object.fromEntries(searchParams.entries()))
 
+    // Vérifier si c'est une demande pour les secteurs
+    if (searchParams.get('action') === 'sectors') {
+      return getAvailableSectors()
+    }
+
     const page = parseInt(params.page)
     const limit = parseInt(params.limit)
     const skip = (page - 1) * limit
@@ -112,8 +117,8 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// GET /api/products/sectors - Récupérer les secteurs disponibles
-export async function getAvailableSectors() {
+// Fonction utilitaire pour récupérer les secteurs disponibles
+async function getAvailableSectors() {
   try {
     await connectDB()
 
