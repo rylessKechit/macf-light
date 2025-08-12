@@ -14,6 +14,7 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
+          console.log('❌ Credentials manquantes')
           return null
         }
 
@@ -25,6 +26,7 @@ export const authOptions: NextAuthOptions = {
           }).select('+password')
           
           if (!user) {
+            console.log('❌ Utilisateur non trouvé:', credentials.email)
             return null
           }
 
@@ -34,9 +36,15 @@ export const authOptions: NextAuthOptions = {
           )
 
           if (!isPasswordValid) {
+            console.log('❌ Mot de passe incorrect pour:', credentials.email)
             return null
           }
 
+          // Mettre à jour la dernière connexion
+          await user.updateLastLogin()
+
+          console.log('✅ Connexion réussie pour:', credentials.email)
+          
           return {
             id: user._id.toString(),
             email: user.email,
@@ -45,7 +53,7 @@ export const authOptions: NextAuthOptions = {
             role: user.role,
           }
         } catch (error) {
-          console.error('Auth error:', error)
+          console.error('❌ Erreur d\'authentification:', error)
           return null
         }
       }
@@ -53,11 +61,10 @@ export const authOptions: NextAuthOptions = {
   ],
   pages: {
     signIn: '/auth/signin',
-    // Retirer signUp et error qui ne sont pas dans les types NextAuth
   },
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 30 * 24 * 60 * 60, // 30 jours
   },
   callbacks: {
     async jwt({ token, user, trigger, session }) {
@@ -67,7 +74,7 @@ export const authOptions: NextAuthOptions = {
         token.role = user.role
       }
       
-      // Handle session update
+      // Gérer les mises à jour de session
       if (trigger === "update" && session) {
         return { ...token, ...session }
       }
@@ -75,7 +82,7 @@ export const authOptions: NextAuthOptions = {
       return token
     },
     async session({ session, token }) {
-      if (token) {
+      if (token && session.user) {
         session.user.id = token.id as string
         session.user.company = token.company as string
         session.user.role = token.role as string

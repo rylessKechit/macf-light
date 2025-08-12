@@ -7,18 +7,30 @@ export default withAuth(
     const token = req.nextauth.token
 
     // Pages qui nécessitent une authentification
-    const protectedPaths = ['/dashboard']
+    const protectedPaths = ['/dashboard', '/declarations', '/suppliers', '/settings']
     
-    // Pages d'administration qui nécessitent un rôle admin
+    // Pages d'administration
     const adminPaths = ['/admin']
     
-    // Pages d'authentification (accessibles seulement si non connecté)
-    const authPaths = ['/auth/signin', '/auth/signup', '/auth/forgot-password']
+    // Pages d'authentification
+    const authPaths = ['/auth/signin', '/auth/signup', '/auth/reset-password']
     
-    // Vérifier si la route nécessite une authentification
+    // API routes qui nécessitent une authentification
+    const protectedApiPaths = ['/api/declarations', '/api/suppliers', '/api/user']
+    
+    // Vérifier les différents types de routes
     const isProtectedPath = protectedPaths.some(path => pathname.startsWith(path))
     const isAdminPath = adminPaths.some(path => pathname.startsWith(path))
     const isAuthPath = authPaths.some(path => pathname.startsWith(path))
+    const isProtectedApiPath = protectedApiPaths.some(path => pathname.startsWith(path))
+    
+    // Gestion des API routes protégées
+    if (isProtectedApiPath && !token) {
+      return NextResponse.json(
+        { success: false, error: 'Non autorisé' },
+        { status: 401 }
+      )
+    }
     
     // Rediriger vers la page de connexion si non authentifié
     if (isProtectedPath && !token) {
@@ -32,7 +44,7 @@ export default withAuth(
       return NextResponse.redirect(new URL('/dashboard', req.url))
     }
     
-    // Rediriger les utilisateurs authentifiés depuis les pages d'auth vers le dashboard
+    // Rediriger les utilisateurs authentifiés depuis les pages d'auth
     if (token && isAuthPath) {
       return NextResponse.redirect(new URL('/dashboard', req.url))
     }
@@ -45,7 +57,14 @@ export default withAuth(
         const { pathname } = req.nextUrl
         
         // Autoriser l'accès aux pages publiques
-        if (pathname === '/' || pathname.startsWith('/auth/') || pathname.startsWith('/legal/')) {
+        const publicPaths = ['/', '/legal', '/auth', '/api/auth']
+        if (publicPaths.some(path => pathname.startsWith(path))) {
+          return true
+        }
+        
+        // Pages d'API publiques
+        const publicApiPaths = ['/api/auth/signup', '/api/health']
+        if (publicApiPaths.some(path => pathname.startsWith(path))) {
           return true
         }
         
@@ -60,12 +79,11 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - public folder
+     * - public folder files
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|public).*)',
+    '/((?!_next/static|_next/image|favicon.ico|public/).*)',
   ],
 }
